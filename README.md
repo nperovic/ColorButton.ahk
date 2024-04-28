@@ -6,12 +6,14 @@ An extended method for changing a button's background color.
 - Compatible with [AutoHotkey v2.1-alpha.9](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha) or later.
 - Learn more about the ahk v2.1-alpha: [Click here](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha)
 
-### On Windows 11
+## Demo
+**On Windows 11**  
 ![colorButton_win11_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/567a8145-c7c3-4800-9210-613b3bdc2f71)
 
-
-### On Windows 10
+**On Windows 10**  
 ![colorButton_win10_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/63c20602-b45d-4030-93a9-0a258c70acb4)
+
+
 
 ## Usage
 1. Download the [ColorButton.ahk](ColorButton.ahk) file.
