@@ -4,7 +4,7 @@
  * @author Nikola Perovic
  * @link https://github.com/nperovic/ColorButton.ahk
  * @date 2024/04/28
- * @version 1.0.0
+ * @version 1.0.1
  ***********************************************************************/
 
 #Requires AutoHotkey v2.1-alpha.9
@@ -14,22 +14,20 @@ class RECT {
     left: i32, top: i32, right: i32, bottom: i32
 }
 
-class NMHDR
-{
-    hwndFrom: uptr
-    idFrom  : uptr
-    code    : i32
-}
-
-class NMCUSTOMDRAWINFO
-{
-    hdr        : NMHDR
+class NMCUSTOMDRAWINFO {
+    hdr        : NMCUSTOMDRAWINFO.NMHDR
     dwDrawStage: u32
     hdc        : uptr
     rc         : RECT
     dwItemSpec : uptr
-    uItemState : u32
+    uItemState : i32
     lItemlParam: iptr
+
+    class NMHDR {
+        hwndFrom: uptr
+        idFrom  : uptr
+        code    : i32
+    }
 }
 
 /**
@@ -44,12 +42,11 @@ class _BtnColor extends Gui.Button {
 
     /**
      * @param {Gui.Button} myBtn 
-     * @param {integer} color 
+     * @param {integer} bkColor 
      */
-    static SetBackColor(myBtn, color)
+    static SetBackColor(myBtn, bkColor)
     {
-        static DC_BRUSH         := 18
-        static DC_PEN           := 19
+        static IS_WIN11         := (VerCompare(A_OSVersion, "10.0.22200") >= 0)
         static WM_CTLCOLORBTN   := 0x0135
         static NM_CUSTOMDRAW    := -12
         static WM_DESTROY       := 0x0002
@@ -57,8 +54,8 @@ class _BtnColor extends Gui.Button {
         static WS_CLIPCHILDREN  := 0x02000000
         static WS_CLIPSIBLINGS  := 0x04000000
         
-        clr        := (IsNumber(color) ? color : Number((!InStr(color, "0x") ? "0x" : "") color))
-        hoverColor := BrightenColor(clr)
+        clr        := (IsNumber(bkColor) ? bkColor : Number((!InStr(bkColor, "0x") ? "0x" : "") bkColor))
+        hoverColor := BrightenColor(clr, 10)
         hbrush     := CreateSolidBrush(ColorHex(myBtn.Gui.BackColor))
         
         myBtn.Gui.Opt("+E" WS_EX_COMPOSITED " +" WS_CLIPCHILDREN)
@@ -78,35 +75,32 @@ class _BtnColor extends Gui.Button {
 
         myBtn.OnNotify(NM_CUSTOMDRAW, (gCtrl, lParam) {
             static CDDS_PREPAINT := 1
-            static BM_GETSTATE   := 0x00F2
-            static BST_PUSHED    := 0x0004
-            static BST_HOT       := 0x0200
-            static BST_FOCUS     := 0x0008
-                   
-            Critical(-1)
-        
-            /** @type {tagNMHDR} */ 
-            LPNMHDR := StructFromPtr(NMHDR, lParam)
+            static CDIS_HOT      := 0x0040
+            static DC_BRUSH      := 18
+            static DC_PEN        := 19
             
-            if !(LPNMHDR.code == NM_CUSTOMDRAW && LPNMHDR.hwndFrom == gCtrl.hwnd)
+            Critical(-1)
+
+            /** @type {NMCUSTOMDRAWINFO} */ 
+            lpnmCD := StructFromPtr(NMCUSTOMDRAWINFO, lParam)
+            
+            if (lpnmCD.hdr.code != NM_CUSTOMDRAW || lpnmCD.hdr.hwndFrom != gCtrl.hwnd || lpnmCD.dwDrawStage != CDDS_PREPAINT)
                 return
 
-            /** @type {tagNMCUSTOMDRAWINFO} */ 
-            lpnmCD := StructFromPtr(NMCUSTOMDRAWINFO, lParam)
-        
-            if (lpnmCD.dwDrawStage = CDDS_PREPAINT) {
-        
-                btnState   := SendMessage(BM_GETSTATE,,, gCtrl.hwnd)
-                brushColor := (btnState & BST_HOT && !(btnState & BST_PUSHED) ? hoverColor : clr)
-                
-                SetDCBrushColor(lpnmCD.hdc, RgbToBgr(brushColor))
-                SetDCPenColor(lpnmCD.hdc, RgbToBgr(brushColor))
-                SelectObject(lpnmCD.hdc, GetStockObject(DC_BRUSH))
-                SelectObject(lpnmCD.hdc, GetStockObject(DC_PEN))
-                SetBkMode(lpnmCD.hdc, 0)
-                RoundRect(lpnmCD.hdc, lpnmCD.rc.left + 3, lpnmCD.rc.top + 3, lpnmCD.rc.right - 3, lpnmCD.rc.bottom - 3, 6, 6)
-                return true
-            } 
+            brushColor := RgbToBgr(GetKeyState("LButton", "P") || !(lpnmCD.uItemState & CDIS_HOT) ? clr : hoverColor )
+
+            SetBkMode(lpnmCD.hdc, 0)
+            SetDCBrushColor(lpnmCD.hdc, brushColor)
+            SelectObject(lpnmCD.hdc, bru := GetStockObject(DC_BRUSH))
+            SetDCPenColor(lpnmCD.hdc, brushColor)
+            SelectObject(lpnmCD.hdc, GetStockObject(DC_PEN))
+            
+            if IS_WIN11
+                RoundRect(lpnmCD.hdc, lpnmCD.rc.left, lpnmCD.rc.top, lpnmCD.rc.right, lpnmCD.rc.bottom, 8, 8)
+            else
+                FillRect(lpnmCD.hdc, lpnmCD.rc, bru)
+
+            return true
         })
 
         RgbToBgr(color) => (IsInteger(color) ? ((Color >> 16) & 0xFF) | (Color & 0x00FF00) | ((Color & 0xFF) << 16) : NUMBER(RegExReplace(STRING(color), "Si)c?(?:0x)?(?<R>\w{2})(?<G>\w{2})(?<B>\w{2})", "0x${B}${G}${R}")))
@@ -122,6 +116,8 @@ class _BtnColor extends Gui.Button {
         SetDCBrushColor(hdc, crColor) => DllCall('Gdi32\SetDCBrushColor', 'ptr', hdc, 'uint', crColor, 'uint')
 
         DeleteObject(hObject) => DllCall('Gdi32\DeleteObject', 'ptr', hObject, 'int')
+
+        FillRect(hDC, lprc, hbr) => DllCall("User32\FillRect", "ptr", hDC, "ptr", lprc, "ptr", hbr, "int")
 
         IsColorDark(clr) => 
             ( (clr >> 16 & 0xFF) / 255 * 0.2126 
