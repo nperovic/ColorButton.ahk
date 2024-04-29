@@ -24,6 +24,20 @@ An extended method for changing a button's background color.
 3. Implement the background color by using the `SetBackColor` method.
 
 ## Example
+
+```js
+/**
+ * @param {Gui.Button} myBtn omitted.
+ * @param {integer} btnBgColor Button's background color.
+ * @param {integer} [colorBehindBtn] The color of the button's surrounding area. If omitted, if will be the same as `myGui.BackColor`.
+ * @param {integer} [roundedCorner] Specifies the rounded corner preference for the button. If omitted,        : 
+ * > For Windows 11: Enabled. (value: 9)  
+ * > For Windows 10: Disabled.   
+ */
+myBtn.SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?)
+```
+
+### Basic Button
 ```py
 #requires AutoHotkey v2.1-alpha.9
 #include <ColorButton>
@@ -33,6 +47,12 @@ myGui.SetFont("cWhite s24", "Segoe UI")
 myGui.BackColor := 0x2c2c2c
 btn := myGui.AddButton(, "SUPREME")
 btn.SetBackColor(0xaa2031)
+myGui.Show("w300 h300")
+```
+
+### Rounded Button
+```py
+btn.SetBackColor(0xaa2031,, 9)
 myGui.Show("w300 h300")
 ```
 
@@ -62,6 +82,20 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 3. 使用 `SetBackColor` 方法變更按鈕背景色彩。
 
 ## 範例
+
+```js
+/**
+ * @param {Gui.Button} myBtn omitted.
+ * @param {integer} btnBgColor Button's background color.
+ * @param {integer} [colorBehindBtn] The color of the button's surrounding area. If omitted, if will be the same as `myGui.BackColor`.
+ * @param {integer} [roundedCorner] Specifies the rounded corner preference for the button. If omitted,        : 
+ * > For Windows 11: Enabled. (value: 9)  
+ * > For Windows 10: Disabled.   
+ */
+myBtn.SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?)
+```
+
+### 基本按鈕
 ```py
 #requires AutoHotkey v2.1-alpha.9
 #include <ColorButton>
@@ -73,6 +107,13 @@ btn := myGui.AddButton(, "SUPREME")
 btn.SetBackColor(0xaa2031)
 myGui.Show("w300 h300")
 ```
+
+### 圓角按鈕
+```py
+btn.SetBackColor(0xaa2031,, 9)
+myGui.Show("w300 h300")
+```
+
 
 ## 許可證
 本項目根據 MIT 許可證進行許可 - 請參閱 [LICENSE.md](LICENSE.md) 文件以獲取詳細資訊。
