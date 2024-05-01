@@ -7,12 +7,13 @@ An extended method for changing a button's background color.
 ## Features
 - Easily change a button's background color.
 - Automatically set the text colour to white or black depends on the background colour.
-- Compatible with [AutoHotkey v2.1-alpha.9](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha) or later.
+- Compatible with [AutoHotkey v2.1-alpha.9](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha) or later. **(Update: v2.0 is now supported too.)**
 - Learn more about the ahk v2.1-alpha: [Click here](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha)
 
 ## Demo
 **On Windows 11**  
-![colorButton_win11_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/567a8145-c7c3-4800-9210-613b3bdc2f71)
+![colorButton_win11_demo_new](https://github.com/nperovic/ColorButton.ahk/assets/122501303/b4d4f274-5605-48d7-95e4-efcde768f4af)
+
 
 **On Windows 10**  
 ![colorButton_win10_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/63c20602-b45d-4030-93a9-0a258c70acb4)
@@ -39,7 +40,7 @@ myBtn.SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?)
 
 ### Basic Button
 ```py
-#requires AutoHotkey v2.1-alpha.9
+#requires AutoHotkey v2
 #include <ColorButton>
 
 myGui := Gui()
@@ -67,11 +68,11 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ## 特點
 - 輕鬆更改按鈕的背景顏色。
 - 自動根據背景色彩的深淺設定文字色彩 (深色背景+白色文字或淺色背景+黑色文字)。
-- 支援 AutoHotkey v2.1-alpha.9 或更高版本。
+- 支援 AutoHotkey v2.0 或更高版本。
 - 想知道更多關於 [ahk v2.1-alpha](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha) 的資訊，請按[這裡](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha)。
 
 **在 Windows 11 上**  
-![colorButton_win11_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/567a8145-c7c3-4800-9210-613b3bdc2f71)
+![colorButton_win11_demo_new](https://github.com/nperovic/ColorButton.ahk/assets/122501303/b4d4f274-5605-48d7-95e4-efcde768f4af)
 
 **在 Windows 10 上**  
 ![colorButton_win10_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/63c20602-b45d-4030-93a9-0a258c70acb4)
@@ -97,7 +98,7 @@ myBtn.SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?)
 
 ### 基本按鈕
 ```py
-#requires AutoHotkey v2.1-alpha.9
+#requires AutoHotkey v2
 #include <ColorButton>
 
 myGui := Gui()
@@ -125,12 +126,12 @@ Proširena metoda za promenu boje pozadine dugmeta.
 
 ## Karakteristike
 - Lako promenite boju pozadine dugmeta.
-- Kompatibilno sa AutoHotkey [v2.1-alpha.9](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha) ili novijim verzijama.
+- Kompatibilno sa AutoHotkey v2.0 ili novijim verzijama.
 - Saznajte više o ahk v2.1-alpha: [Kliknite ovde](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha)
 
 ## Demo
 **Na Windows 11**  
-![colorButton_win11_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/567a8145-c7c3-4800-9210-613b3bdc2f71)
+![colorButton_win11_demo_new](https://github.com/nperovic/ColorButton.ahk/assets/122501303/b4d4f274-5605-48d7-95e4-efcde768f4af)
 
 **Na Windows 10**  
 ![colorButton_win10_demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/63c20602-b45d-4030-93a9-0a258c70acb4)
@@ -143,7 +144,7 @@ Proširena metoda za promenu boje pozadine dugmeta.
 
 ## Primer
 ```py
-#requires AutoHotkey v2.1-alpha.9
+#requires AutoHotkey v2
 #include <ColorButton>
 
 myGui := Gui()
