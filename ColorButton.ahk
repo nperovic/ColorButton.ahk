@@ -100,7 +100,7 @@ class _Gui extends Gui
 
         _callback(wParam, lParam, uMsg, hWnd)
         {
-            if (uMsg = Msg && hWnd = obj.hwnd)
+            try if (uMsg = Msg && hWnd = obj.hwnd)
                 return Callback(obj, wParam, lParam, uMsg)
         }
     }
