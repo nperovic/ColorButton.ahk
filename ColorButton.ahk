@@ -3,8 +3,8 @@
  * @file ColorButton.ahk
  * @author Nikola Perovic
  * @link https://github.com/nperovic/ColorButton.ahk
- * @date 2024/04/29
- * @version 1.1.0
+ * @date 2024/05/06
+ * @version 1.2.0
  ***********************************************************************/
 
 #Requires AutoHotkey v2
@@ -54,44 +54,52 @@ class NMCUSTOMDRAWINFO {
 
 StructFromPtr(StructClass, Address) => StructClass(Address)
 
-class NMCUSTOMDRAWINFO
+Buffer.Prototype.PropDesc := PropDesc
+PropDesc(buf, name, ofst, type, ptr?) {
+    if (ptr??0)
+        NumPut(type, NumGet(ptr, ofst, type), buf, ofst)
+    buf.DefineProp(name, {
+        Get: NumGet.Bind(, ofst, type),
+        Set: (p, v) => NumPut(type, v, buf, ofst)
+    })
+}
+class NMHDR extends Buffer {
+    __New(ptr?) {
+        super.__New(A_PtrSize * 2 + 4)
+        this.PropDesc("hwndFrom", 0, "uptr", ptr?)
+        this.PropDesc("idFrom", A_PtrSize,"uptr", ptr?)   
+        this.PropDesc("code", A_PtrSize * 2 ,"int", ptr?)     
+    }
+}
+
+class RECT extends Buffer { 
+    __New(ptr?) {
+        super.__New(16)
+        for i, prop in ["left", "top", "right", "bottom"]
+            this.PropDesc(prop, 4 * (i-1), "int", ptr?)
+    }
+}
+class NMCUSTOMDRAWINFO extends Buffer
 {
-    static Call(ptr)
-    {
-        return {
-            hdr: {
-                hwndFrom: NumGet(ptr, 0 ,"uptr"),
-                idFrom  : NumGet(ptr, 8 ,"uptr"),
-                code    : NumGet(ptr, 16 ,"int")
-            },
-            dwDrawStage: NumGet(ptr, 24, "uint"),
-            hdc        : NumGet(ptr, 32, "uptr"),
-            rc         : RECT(
-                NumGet(ptr, 40, "uint"),
-                NumGet(ptr, 44, "uint"),
-                NumGet(ptr, 48, "int"),
-                NumGet(ptr, 52, "int")
-            ),
-            dwItemSpec : NumGet(ptr, 56, "uptr"),
-            uItemState : NumGet(ptr, 64, "int"),
-            lItemlParam: NumGet(ptr, 72, "iptr")
-        }
-        
-        RECT(left := 0, top := 0, right := 0, bottom := 0)
-        {
-            static ofst := Map("left", 0, "top", 4, "right", 8, "bottom", 12)
-            NumPut("int", left, "int", top, "int", right, "int", bottom, buf := Buffer(16))
-            for k, v in ofst
-                buf.DefineProp(k, {Get: NumGet.Bind(, v, "int"), Set: IntPut.Bind(v)})
-            return buf
-            IntPut(ofst, _, v) => NumPut("int", v, _, ofst)
-        }
+    __New(ptr?) {
+        static x64 := (A_PtrSize = 8)
+        super.__New(x64 ? 80 : 48)
+        this.hdr := NMHDR(ptr?)
+        this.rc  := RECT((ptr??0) ? ptr + (x64 ? 40 : 20) : unset)
+        this.PropDesc("dwDrawStage", x64 ? 24 : 12, "uint", ptr?)  
+        this.PropDesc("hdc"        , x64 ? 32 : 16, "uptr", ptr?)          
+        this.PropDesc("dwItemSpec" , x64 ? 56 : 36, "uptr", ptr?)   
+        this.PropDesc("uItemState" , x64 ? 64 : 40, "int", ptr?)   
+        this.PropDesc("lItemlParam", x64 ? 72 : 44, "iptr", ptr?)
     }
 }
 
 class _Gui extends Gui
 {
-    static __New() => (super.Prototype.OnMessage := ObjBindMethod(this, "OnMessage"))
+    static __New() {
+        super.Prototype.OnMessage         := ObjBindMethod(this, "OnMessage")
+        super.Control.Prototype.OnMessage := ObjBindMethod(this, "OnMessage")
+    }
 
     static OnMessage(obj, Msg, Callback, AddRemove?)
     {
@@ -106,10 +114,9 @@ class _Gui extends Gui
     }
 }
 
-; If you're using v2.1-alpha.9 or later, delete the section ABOVE.
-; If you're using v2.1-alpha.9 or later, delete the section ABOVE.
-; If you're using v2.1-alpha.9 or later, delete the section ABOVE.
-
+; If you're using v2.1-alpha.9 or later, delete the section above.
+; If you're using v2.1-alpha.9 or later, delete the section above.
+; If you're using v2.1-alpha.9 or later, delete the section above.
 ; #endregion
 
 ; ================================================================================
@@ -143,6 +150,7 @@ class _BtnColor extends Gui.Button
         static WM_DESTROY       := 0x0002
         static WS_EX_COMPOSITED := 0x02000000
         static WS_CLIPSIBLINGS  := 0x04000000
+        static BTN_STYLE        := (WS_CLIPSIBLINGS | BS_FLAT | BS_BITMAP)
 
         rcRgn       := unset
         clr         := IsNumber(btnBgColor) ? btnBgColor : ColorHex(btnBgColor)
@@ -150,31 +158,35 @@ class _BtnColor extends Gui.Button
         hoverColor  := RgbToBgr(BrightenColor(clr, isDark ? 15 : -15))
         pushedColor := RgbToBgr(BrightenColor(clr, isDark ? -10 : 10))
         clr         := RgbToBgr(clr)
-        btnBkColr   := (colorBehindBtn??0) && RgbToBgr(ColorHex(myBtn.Gui.BackColor))
-        hbrush      := btnBkColr ? CreateSolidBrush(btnBkColr) : GetStockObject(5)
+        btnBkColr   := (colorBehindBtn ?? !IS_WIN11) && RgbToBgr(ColorHex(myBtn.Gui.BackColor))
+        hbrush      := (colorBehindBtn ?? !IS_WIN11) ? CreateSolidBrush(btnBkColr) : GetStockObject(5)
 
-        myBtn.Gui.Opt("+" WS_CLIPSIBLINGS)
         myBtn.Gui.OnMessage(WM_CTLCOLORBTN, ON_WM_CTLCOLORBTN)
 
         if btnBkColr
             myBtn.Gui.OnEvent("Close", (*) => DeleteObject(hbrush))
 
-        myBtn.Opt("+" (WS_CLIPSIBLINGS | BS_FLAT | BS_BITMAP))
+        myBtn.Opt(BTN_STYLE (IsSet(colorBehindBtn) ? "Background" colorBehindBtn : "")) ;  
+        myBtn.OnNotify(NM_CUSTOMDRAW, (gCtrl, lParam) => ON_NM_CUSTOMDRAW(gCtrl, lParam))
         SetWindowTheme(myBtn.hwnd, isDark ? "DarkMode_Explorer" : "Explorer")
-        myBtn.OnNotify(NM_CUSTOMDRAW, ON_NM_CUSTOMDRAW)
         myBtn.Redraw()
+        SetWindowPos(mybtn.hwnd, 0,,,,, 0x43)
 
         ON_WM_CTLCOLORBTN(GuiObj, wParam, lParam, Msg)
         {
-            Critical(-1)
+            if (lParam != myBtn.hwnd || !myBtn.Focused)
+                return
 
-            if btnBkColr 
-                SelectObject(wParam, hbrush),
-                SetBkMode(wParam, 0),
+            SelectObject(wParam, hbrush)
+            SetBkMode(wParam, 0)
+
+            if (colorBehindBtn ?? !IS_WIN11) 
                 SetBkColor(wParam, btnBkColr)
 
             return hbrush 
         }
+
+        first := 1
 
         ON_NM_CUSTOMDRAW(gCtrl, lParam)
         {
@@ -189,47 +201,58 @@ class _BtnColor extends Gui.Button
             static DC_BRUSH             := GetStockObject(18)
             static DC_PEN               := GetStockObject(19)
             
-            Critical(-1)
-
             lpnmCD := StructFromPtr(NMCUSTOMDRAWINFO, lParam)
 
-            if (lpnmCD.hdr.code != NM_CUSTOMDRAW || lpnmCD.hdr.hwndFrom != gCtrl.hwnd)
-                return
+            if (lpnmCD.hdr.code != NM_CUSTOMDRAW ||lpnmCD.hdr.hwndFrom != gCtrl.hwnd)
+                return CDRF_DODEFAULT
             
             switch lpnmCD.dwDrawStage {
             case CDDS_PREERASE:
             {
+                SetBkMode(lpnmCD.hdc, 0)
                 if (roundedCorner ?? IS_WIN11) {
                     rcRgn := CreateRoundRectRgn(lpnmCD.rc.left, lpnmCD.rc.top, lpnmCD.rc.right, lpnmCD.rc.bottom, roundedCorner ?? 9, roundedCorner ?? 9)
                     SetWindowRgn(gCtrl.hwnd, rcRgn, 1)
+                    DeleteObject(rcRgn)
                 }
-
-                SetBkMode(lpnmCD.hdc, 0)
                 return CDRF_NOTIFYPOSTERASE 
             }
             case CDDS_PREPAINT: 
             {
-                brushColor := (!(lpnmCD.uItemState & CDIS_HOT) ? clr : (GetKeyState("LButton", "P")) ? pushedColor : hoverColor)
-
+                isPressed  := GetKeyState("LButton", "P")
+                brushColor := (!(lpnmCD.uItemState & CDIS_HOT) || first ? clr : isPressed ? pushedColor : hoverColor)
+                penColor   := (!first && gCtrl.Focused && !isPressed ? 0xFFFFFF : brushColor)
+                
                 SelectObject(lpnmCD.hdc, DC_BRUSH)
                 SetDCBrushColor(lpnmCD.hdc, brushColor)
-                
                 SelectObject(lpnmCD.hdc, DC_PEN)
-                SetDCPenColor(lpnmCD.hdc, gCtrl.Focused ? 0xFFFFFF : brushColor)
-
-                if gCtrl.Focused 
-                    DrawFocusRect(lpnmCD.hdc, lpnmCD.rc)
+                SetDCPenColor(lpnmCD.hdc, penColor)
 
                 rounded := !!(rcRgn ?? 0)
 
-                RoundRect(lpnmCD.hdc, lpnmCD.rc.left, lpnmCD.rc.top, lpnmCD.rc.right - rounded, lpnmCD.rc.bottom - rounded, roundedCorner ?? 9, roundedCorner ?? 9)
-
-                if rounded {
-                    DeleteObject(rcRgn)
-                    rcRgn := ""
+                if (!first && gCtrl.Focused && !isPressed) {
+                    if !rounded {
+                        lpnmCD.rc.left   += 1
+                        lpnmCD.rc.top    += 1
+                        lpnmCD.rc.right  -= 1
+                        lpnmCD.rc.bottom -= 1
+                    }
+                    DrawFocusRect(lpnmCD.hdc, lpnmCD.rc)
                 }
 
-                return CDRF_NOTIFYPOSTPAINT 
+                if rounded {
+                    RoundRect(lpnmCD.hdc, lpnmCD.rc.left, lpnmCD.rc.top, lpnmCD.rc.right - rounded, lpnmCD.rc.bottom - rounded, roundedCorner ?? 9, roundedCorner ?? 9)
+                    DeleteObject(rcRgn)
+                    rcRgn := ""                    
+                }
+                else FillRect(lpnmCD.hdc, lpnmCD.rc, DC_BRUSH)
+
+                if first
+                    first := 0
+
+                SetWindowPos(mybtn.hwnd, 0,,,,, 0x4043)
+
+                return CDRF_NOTIFYPOSTPAINT
             }}
             
             return CDRF_DODEFAULT
@@ -245,7 +268,9 @@ class _BtnColor extends Gui.Button
 
         static DrawFocusRect(hDC, lprc) => DllCall("User32\DrawFocusRect", "ptr", hDC, "ptr", lprc, "int")
 
-        GetStockObject(fnObject) => DllCall('Gdi32\GetStockObject', 'int', fnObject, 'ptr')
+        static GetStockObject(fnObject) => DllCall('Gdi32\GetStockObject', 'int', fnObject, 'ptr')
+
+        static SetWindowPos(hWnd, hWndInsertAfter, X := 0, Y := 0, cx := 0, cy := 0, uFlags := 0x40) => DllCall("User32\SetWindowPos", "ptr", hWnd, "ptr", hWndInsertAfter, "int", X, "int", Y, "int", cx, "int", cy, "uint", uFlags, "int")
 
         static SetDCPenColor(hdc, crColor) => DllCall('Gdi32\SetDCPenColor', 'ptr', hdc, 'uint', crColor, 'uint')
 
@@ -285,10 +310,13 @@ class _BtnColor extends Gui.Button
 ; Example
 /*
 myGui := Gui()
-myGui.SetFont("cWhite s24", "Segoe UI")
+myGui.SetFont("cWhite s20", "Segoe UI")
 myGui.BackColor := 0x2c2c2c
 btn := myGui.AddButton(, "SUPREME")
 btn.SetBackColor(0xaa2031)
 btn2 := myGui.AddButton(, "SUPREME")
 btn2.SetBackColor(0xffd155)
-myGui.Show("w300 h300")
+btn3 := myGui.AddButton(, "SUPREME")
+btn3.SetBackColor("0x7755ff", , 0)
+
+myGui.Show("w280 h280")
