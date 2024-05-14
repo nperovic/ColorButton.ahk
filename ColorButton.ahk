@@ -166,7 +166,7 @@ class _BtnColor extends Gui.Button
         if btnBkColr
             myBtn.Gui.OnEvent("Close", (*) => DeleteObject(hbrush))
 
-        myBtn.Opt(BTN_STYLE (IsSet(colorBehindBtn) ? "Background" colorBehindBtn : "")) ;  
+        myBtn.Opt(BTN_STYLE (IsSet(colorBehindBtn) ? " Background" colorBehindBtn : "")) ;  
         myBtn.OnNotify(NM_CUSTOMDRAW, (gCtrl, lParam) => ON_NM_CUSTOMDRAW(gCtrl, lParam))
         SetWindowTheme(myBtn.hwnd, isDark ? "DarkMode_Explorer" : "Explorer")
         myBtn.Redraw()
