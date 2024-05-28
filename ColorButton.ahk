@@ -52,67 +52,68 @@ class NMCUSTOMDRAWINFO {
 ; If you're using v2.1-alpha.9 or later, delete the section BELOW.
 ; If you're using v2.1-alpha.9 or later, delete the section BELOW.
 
-StructFromPtr(StructClass, Address) => StructClass(Address)
+; StructFromPtr(StructClass, Address) => StructClass(Address)
 
-Buffer.Prototype.PropDesc := PropDesc
-PropDesc(buf, name, ofst, type, ptr?) {
-    if (ptr??0)
-        NumPut(type, NumGet(ptr, ofst, type), buf, ofst)
-    buf.DefineProp(name, {
-        Get: NumGet.Bind(, ofst, type),
-        Set: (p, v) => NumPut(type, v, buf, ofst)
-    })
-}
-class NMHDR extends Buffer {
-    __New(ptr?) {
-        super.__New(A_PtrSize * 2 + 4)
-        this.PropDesc("hwndFrom", 0, "uptr", ptr?)
-        this.PropDesc("idFrom", A_PtrSize,"uptr", ptr?)   
-        this.PropDesc("code", A_PtrSize * 2 ,"int", ptr?)     
-    }
-}
+; Buffer.Prototype.PropDesc := PropDesc 
+; PropDesc(buf, name, ofst, type, ptr?) {
+;     if (ptr??0)
+;         NumPut(type, NumGet(ptr, ofst, type), buf, ofst)
+;     buf.DefineProp(name, {
+;         Get: NumGet.Bind(, ofst, type),
+;         Set: (p, v) => NumPut(type, v, buf, ofst)
+;     })
+; }
+; class NMHDR extends Buffer {
+;     __New(ptr?) {
+;         super.__New(A_PtrSize * 2 + 4)
+;         this.PropDesc("hwndFrom", 0, "uptr", ptr?)
+;         this.PropDesc("idFrom", A_PtrSize,"uptr", ptr?)   
+;         this.PropDesc("code", A_PtrSize * 2 ,"int", ptr?)     
+;     }
+; }
 
-class RECT extends Buffer { 
-    __New(ptr?) {
-        super.__New(16)
-        for i, prop in ["left", "top", "right", "bottom"]
-            this.PropDesc(prop, 4 * (i-1), "int", ptr?)
-    }
-}
-class NMCUSTOMDRAWINFO extends Buffer
-{
-    __New(ptr?) {
-        static x64 := (A_PtrSize = 8)
-        super.__New(x64 ? 80 : 48)
-        this.hdr := NMHDR(ptr?)
-        this.rc  := RECT((ptr??0) ? ptr + (x64 ? 40 : 20) : unset)
-        this.PropDesc("dwDrawStage", x64 ? 24 : 12, "uint", ptr?)  
-        this.PropDesc("hdc"        , x64 ? 32 : 16, "uptr", ptr?)          
-        this.PropDesc("dwItemSpec" , x64 ? 56 : 36, "uptr", ptr?)   
-        this.PropDesc("uItemState" , x64 ? 64 : 40, "int", ptr?)   
-        this.PropDesc("lItemlParam", x64 ? 72 : 44, "iptr", ptr?)
-    }
-}
+; class RECT extends Buffer { 
+;     __New(ptr?) {
+;         super.__New(16)
+;         for i, prop in ["left", "top", "right", "bottom"]
+;             this.PropDesc(prop, 4 * (i-1), "int", ptr?)
+;     }
+; }
 
-class _Gui extends Gui
-{
-    static __New() {
-        super.Prototype.OnMessage         := ObjBindMethod(this, "OnMessage")
-        super.Control.Prototype.OnMessage := ObjBindMethod(this, "OnMessage")
-    }
+; class NMCUSTOMDRAWINFO extends Buffer
+; {
+;     __New(ptr?) {
+;         static x64 := (A_PtrSize = 8)
+;         super.__New(x64 ? 80 : 48)
+;         this.hdr := NMHDR(ptr?)
+;         this.rc  := RECT((ptr??0) ? ptr + (x64 ? 40 : 20) : unset)
+;         this.PropDesc("dwDrawStage", x64 ? 24 : 12, "uint", ptr?)  
+;         this.PropDesc("hdc"        , x64 ? 32 : 16, "uptr", ptr?)          
+;         this.PropDesc("dwItemSpec" , x64 ? 56 : 36, "uptr", ptr?)   
+;         this.PropDesc("uItemState" , x64 ? 64 : 40, "int", ptr?)   
+;         this.PropDesc("lItemlParam", x64 ? 72 : 44, "iptr", ptr?)
+;     }
+; }
 
-    static OnMessage(obj, Msg, Callback, AddRemove?)
-    {
-        OnMessage(Msg, _callback, AddRemove?)
-        obj.OnEvent("Close", g => OnMessage(Msg, _callback, 0))
+; class _Gui extends Gui
+; {
+;     static __New() {
+;         super.Prototype.OnMessage         := ObjBindMethod(this, "OnMessage")
+;         super.Control.Prototype.OnMessage := ObjBindMethod(this, "OnMessage")
+;     }
 
-        _callback(wParam, lParam, uMsg, hWnd)
-        {
-            try if (uMsg = Msg && hWnd = obj.hwnd)
-                return Callback(obj, wParam, lParam, uMsg)
-        }
-    }
-}
+;     static OnMessage(obj, Msg, Callback, AddRemove?)
+;     {
+;         OnMessage(Msg, _callback, AddRemove?)
+;         obj.OnEvent("Close", g => OnMessage(Msg, _callback, 0))
+
+;         _callback(wParam, lParam, uMsg, hWnd)
+;         {
+;             try if (uMsg = Msg && hWnd = obj.hwnd)
+;                 return Callback(obj, wParam, lParam, uMsg)
+;         }
+;     }
+; }
 
 ; If you're using v2.1-alpha.9 or later, delete the section above.
 ; If you're using v2.1-alpha.9 or later, delete the section above.
