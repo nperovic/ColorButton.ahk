@@ -78,6 +78,8 @@ class RECT extends Buffer {
         super.__New(16)
         for i, prop in ["left", "top", "right", "bottom"]
             this.PropDesc(prop, 4 * (i-1), "int", ptr?)
+        this.DefineProp("Width", {Get: rc => (rc.right - rc.left)})
+        this.DefineProp("Height", {Get: rc => (rc.bottom - rc.top)})
     }
 }
 
