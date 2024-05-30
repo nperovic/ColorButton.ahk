@@ -198,14 +198,14 @@ class _BtnColor extends Gui.Button
      */
     SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?, showFocusedBorder := true)
     {
-        static BS_FLAT          := 0x8000
         static BS_BITMAP        := 0x0080
+        static BS_FLAT          := 0x8000
         static IS_WIN11         := (VerCompare(A_OSVersion, "10.0.22200") >= 0)
-        static WM_CTLCOLORBTN   := 0x0135
         static NM_CUSTOMDRAW    := -12
+        static WM_CTLCOLORBTN   := 0x0135
         static WM_DESTROY       := 0x0002
-        static WS_EX_COMPOSITED := 0x02000000
         static WS_CLIPSIBLINGS  := 0x04000000
+        static WS_EX_COMPOSITED := 0x02000000
         static BTN_STYLE        := (WS_CLIPSIBLINGS | BS_FLAT | BS_BITMAP)
 
         clr         := IsNumber(btnBgColor) ? btnBgColor : ColorHex(btnBgColor)
