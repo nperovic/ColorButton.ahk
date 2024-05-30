@@ -272,32 +272,35 @@ class _BtnColor extends Gui.Button
             case CDDS_PREPAINT : 
             {
                 isPressed   := GetKeyState("LButton", "P")
+                isHot       := (lpnmCD.uItemState & CDIS_HOT)
                 corner      := (roundedCorner ?? (IS_WIN11 ? 9 : 0))
                 drawFocused := (showFocusedBorder && !first && gCtrl.Focused && !isPressed)
-                brushColor  := (!(lpnmCD.uItemState & CDIS_HOT) || first ? clr : isPressed ? pushedColor : hoverColor)
-                penColor    := (drawFocused ? 0xFFFFFF : brushColor)
 
-                InflateRect(rc := lpnmCD.rc, -4, -4)
-                SetWindowRgn(gCtrl.hwnd, rcRgn := CreateRoundRectRgn(rc.left, rc.top, rc.right, rc.bottom, corner, corner), 1)
+                brushColor := (!isHot || first ? clr : isPressed ? pushedColor : hoverColor)
+                penColor   := (drawFocused ? 0xFFFFFF : brushColor)
+
+                rc    := lpnmCD.rc
+                rcRgn := CreateRoundRectRgn(rc.left, rc.top, rc.right, rc.bottom, corner, corner)
+                SetWindowRgn(gCtrl.hwnd, rcRgn, 1)
+                DeleteObject(rcRgn)
 
                 SelectObject(lpnmCD.hdc, DC_BRUSH)
                 SetDCBrushColor(lpnmCD.hdc, brushColor)
+
                 SelectObject(lpnmCD.hdc, DC_PEN)
                 SetDCPenColor(lpnmCD.hdc, penColor)
+
                 SetBkMode(lpnmCD.hdc, 0)
 
-                if drawFocused {
-                    InflateRect(lpnmCD.rc, -1, -1)
-                    DrawFocusRect(lpnmCD.hdc, lpnmCD.rc)
-                }
+                if drawFocused 
+                    FrameRgn(lpnmCD.hdc, rcRgn, DC_PEN, rc.Width, rc.Height)
 
-                RoundRect(lpnmCD.hdc, lpnmCD.rc.left, lpnmCD.rc.top, lpnmCD.rc.right, lpnmCD.rc.bottom, corner, corner)
-                DeleteObject(rcRgn)
+                RoundRect(lpnmCD.hdc, rc.left, rc.top, rc.right-1, rc.bottom-1, corner, corner)
 
                 if first
                     first := 0
 
-                SetWindowPos(this.hwnd, 0,,,,, 0x4043)
+                SetWindowPos(this.hwnd, 0, 0, 0, 0, 0, 0x4043)
 
                 return CDRF_NOTIFYPOSTPAINT
             }}
@@ -305,54 +308,45 @@ class _BtnColor extends Gui.Button
             return CDRF_DODEFAULT
         }
 
-        RgbToBgr(color) => (IsInteger(color) ? ((Color >> 16) & 0xFF) | (Color & 0x00FF00) | ((Color & 0xFF) << 16) : NUMBER(RegExReplace(STRING(color), "Si)c?(?:0x)?(?<R>\w{2})(?<G>\w{2})(?<B>\w{2})", "0x${B}${G}${R}")))
+        BrightenColor(clr, perc := 5) => ((p := perc / 100 + 1), RGB(Round(Min(255, (clr >> 16 & 0xFF) * p)), Round(Min(255, (clr >> 8 & 0xFF) * p)), Round(Min(255, (clr & 0xFF) * p))))
+
+        ColorHex(clr) => Number((!InStr(clr, "0x") ? "0x" : "") clr)
 
         CreateRoundRectRgn(nLeftRect, nTopRect, nRightRect, nBottomRect, nWidthEllipse, nHeightEllipse) => DllCall('Gdi32\CreateRoundRectRgn', 'int', nLeftRect, 'int', nTopRect, 'int', nRightRect, 'int', nBottomRect, 'int', nWidthEllipse, 'int', nHeightEllipse, 'ptr')
 
         CreateSolidBrush(crColor) => DllCall('Gdi32\CreateSolidBrush', 'uint', crColor, 'ptr')
 
-        ColorHex(clr) => Number((!InStr(clr, "0x") ? "0x" : "") clr)
+        DeleteObject(hObject) => DllCall('Gdi32\DeleteObject', 'ptr', hObject, 'int')
 
-        DrawFocusRect(hDC, lprc) => DllCall("User32\DrawFocusRect", "ptr", hDC, "ptr", lprc, "int")
+        FrameRgn(hdc, hrgn, hbr, nWidth, nHeight) => DllCall('Gdi32\FrameRgn', 'ptr', hdc, 'ptr', hrgn, 'ptr', hbr, 'int', nWidth, 'int', nHeight, 'int')
 
         GetStockObject(fnObject) => DllCall('Gdi32\GetStockObject', 'int', fnObject, 'ptr')
 
-        InflateRect(lprc, dx, dy) => DllCall("User32\InflateRect", "ptr", lprc, "int", dx, "int", dy, "int")
+        IsColorDark(clr) => ((clr >> 16 & 0xFF) / 255 * 0.2126 + (clr >> 8 & 0xFF) / 255 * 0.7152 + (clr & 0xFF) / 255 * 0.0722 < 0.5)
 
-        SetWindowPos(hWnd, hWndInsertAfter, X := 0, Y := 0, cx := 0, cy := 0, uFlags := 0x40) => DllCall("User32\SetWindowPos", "ptr", hWnd, "ptr", hWndInsertAfter, "int", X, "int", Y, "int", cx, "int", cy, "uint", uFlags, "int")
+        RGB(R := 255, G := 255, B := 255) => ((R << 16) | (G << 8) | B)
 
-        SetDCPenColor(hdc, crColor) => DllCall('Gdi32\SetDCPenColor', 'ptr', hdc, 'uint', crColor, 'uint')
+        RgbToBgr(color) => (IsInteger(color) ? ((Color >> 16) & 0xFF) | (Color & 0x00FF00) | ((Color & 0xFF) << 16) : NUMBER(RegExReplace(STRING(color), "Si)c?(?:0x)?(?<R>\w{2})(?<G>\w{2})(?<B>\w{2})", "0x${B}${G}${R}")))
+
+        RoundRect(hdc, nLeftRect, nTopRect, nRightRect, nBottomRect, nWidth, nHeight) => DllCall('Gdi32\RoundRect', 'ptr', hdc, 'int', nLeftRect, 'int', nTopRect, 'int', nRightRect, 'int', nBottomRect, 'int', nWidth, 'int', nHeight, 'int')
+
+        SelectObject(hdc, hgdiobj) => DllCall('Gdi32\SelectObject', 'ptr', hdc, 'ptr', hgdiobj, 'ptr')
+
+        SetBkColor(hdc, crColor) => DllCall('Gdi32\SetBkColor', 'ptr', hdc, 'uint', crColor, 'uint')
+
+        SetBkMode(hdc, iBkMode) => DllCall('Gdi32\SetBkMode', 'ptr', hdc, 'int', iBkMode, 'int')
 
         SetDCBrushColor(hdc, crColor) => DllCall('Gdi32\SetDCBrushColor', 'ptr', hdc, 'uint', crColor, 'uint')
 
+        SetDCPenColor(hdc, crColor) => DllCall('Gdi32\SetDCPenColor', 'ptr', hdc, 'uint', crColor, 'uint')
+
+        SetTextColor(hdc, color) => DllCall("SetTextColor", "Ptr", hdc, "UInt", color)
+
+        SetWindowPos(hWnd, hWndInsertAfter, X := 0, Y := 0, cx := 0, cy := 0, uFlags := 0x40) => DllCall("User32\SetWindowPos", "ptr", hWnd, "ptr", hWndInsertAfter, "int", X, "int", Y, "int", cx, "int", cy, "uint", uFlags, "int")
+
         SetWindowRgn(hWnd, hRgn, bRedraw) => DllCall("User32\SetWindowRgn", "ptr", hWnd, "ptr", hRgn, "int", bRedraw, "int")
 
-        DeleteObject(hObject) {
-            DllCall('Gdi32\DeleteObject', 'ptr', hObject, 'int')
-        }
-
-        FillRect(hDC, lprc, hbr) => DllCall("User32\FillRect", "ptr", hDC, "ptr", lprc, "ptr", hbr, "int")
-
-        IsColorDark(clr) => 
-            ( (clr >> 16 & 0xFF) / 255 * 0.2126 
-            + (clr >>  8 & 0xFF) / 255 * 0.7152 
-            + (clr       & 0xFF) / 255 * 0.0722 < 0.5 )
-
-        RGB(R := 255, G := 255, B := 255) => ((R << 16) | (G << 8) | B)
-        
-        BrightenColor(clr, perc := 5) => ((p := perc / 100 + 1), RGB(Round(Min(255, (clr >> 16 & 0xFF) * p)), Round(Min(255, (clr >> 8 & 0xFF) * p)), Round(Min(255, (clr & 0xFF) * p))))
-
-        RoundRect(hdc, nLeftRect, nTopRect, nRightRect, nBottomRect, nWidth, nHeight) => DllCall('Gdi32\RoundRect', 'ptr', hdc, 'int', nLeftRect, 'int', nTopRect, 'int', nRightRect, 'int', nBottomRect, 'int', nWidth, 'int', nHeight, 'int')
-        
-        SetTextColor(hdc, color) => DllCall("SetTextColor", "Ptr", hdc, "UInt", color)
-        
         SetWindowTheme(hwnd, appName, subIdList?) => DllCall("uxtheme\SetWindowTheme", "ptr", hwnd, "ptr", StrPtr(appName), "ptr", subIdList ?? 0)
-        
-        SelectObject(hdc, hgdiobj) => DllCall('Gdi32\SelectObject', 'ptr', hdc, 'ptr', hgdiobj, 'ptr')
-                
-        SetBkColor(hdc, crColor) => DllCall('Gdi32\SetBkColor', 'ptr', hdc, 'uint', crColor, 'uint')
-        
-        SetBkMode(hdc, iBkMode) => DllCall('Gdi32\SetBkMode', 'ptr', hdc, 'int', iBkMode, 'int')
     }
 }
 
@@ -361,8 +355,12 @@ myGui := Gui()
 myGui.SetFont("cWhite s20", "Segoe UI")
 myGui.BackColor := 0x2c2c2c
 
+btnL := myGui.AddButton("w300 Background" myGui.BackColor, "Default Button")
+btnD := myGui.AddButton("wp Background" myGui.BackColor, "Default Button")
+DllCall("uxtheme\SetWindowTheme", "ptr", btnD.hwnd, "ptr", StrPtr("DarkMode_Explorer"), "ptr", 0)
+
 /** @type {_BtnColor} */
-btn := myGui.AddButton("w300", "Rounded Button")
+btn := myGui.AddButton("wp", "Rounded Button")
 btn.SetBackColor(0xaa2031,, 9)
 
 /** @type {_BtnColor} */
