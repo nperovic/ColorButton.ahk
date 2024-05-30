@@ -18,23 +18,28 @@
 ; If you're NOT using v2.1-alpha.9 or later, delete the section BELOW.
 ; If you're NOT using v2.1-alpha.9 or later, delete the section BELOW.
 
-; class NMCUSTOMDRAWINFO {
-; hdr        : NMCUSTOMDRAWINFO.NMHDR
-; dwDrawStage: u32
-; hdc        : uptr
-; rc         : NMCUSTOMDRAWINFO.RECT
-; dwItemSpec : uptr
-; uItemState : i32
-; lItemlParam: iptr
+; class NMCUSTOMDRAWINFO
+; {
+;     hdr        : NMCUSTOMDRAWINFO.NMHDR
+;     dwDrawStage: u32
+;     hdc        : uptr
+;     rc         : NMCUSTOMDRAWINFO.RECT
+;     dwItemSpec : uptr
+;     uItemState : i32
+;     lItemlParam: iptr
 
-;     class RECT {
-; left: i32, top: i32, right: i32, bottom: i32
+;     class RECT
+;     {
+;         left: i32, top: i32, right: i32, bottom: i32
+;         width  => this.right - this.left
+;         height => this.bottom - this.top
 ;     }
 
-;     class NMHDR {
-; hwndFrom: uptr
-; idFrom  : uptr
-; code    : i32
+;     class NMHDR
+;     {
+;         hwndFrom: uptr
+;         idFrom  : uptr
+;         code    : i32
 ;     }
 ; }
 
