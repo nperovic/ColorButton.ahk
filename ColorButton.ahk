@@ -41,6 +41,22 @@
 ;         idFrom  : uptr
 ;         code    : i32
 ;     }
+
+;     __New(ptr?) {
+;         if (ptr??0) {
+;             scc := StructFromPtr(NMCUSTOMDRAWINFO, ptr?)
+;             for p, v in scc.Props() {
+;                 if IsObject(v) {
+;                     for p2, v2 in v.Props()
+;                         try this.%p%.%p2% := v2
+;                 } else
+;                     try this.%p% := v
+;             }
+;         }
+;     }
+
+;     ptr  => ObjGetDataPtr(this)
+;     size => ObjGetDataSize(this)
 ; }
 
 ; If you're NOT using v2.1-alpha.9 or later, delete the section ABOVE.
@@ -264,10 +280,7 @@ class _BtnColor extends Gui.Button
             static DC_BRUSH             := GetStockObject(18)
             static DC_PEN               := GetStockObject(19)
 
-            if IsSet(StructFromPtr)
-                try lpnmCD := StructFromPtr(NMCUSTOMDRAWINFO, lParam)
-            
-            lpnmCD := lpnmCD ?? NMCUSTOMDRAWINFO(lParam)
+            lpnmCD := NMCUSTOMDRAWINFO(lParam)
 
             if (lpnmCD.hdr.code != NM_CUSTOMDRAW ||lpnmCD.hdr.hwndFrom != gCtrl.hwnd)
                 return CDRF_DODEFAULT
