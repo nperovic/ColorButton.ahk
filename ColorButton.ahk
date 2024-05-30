@@ -1,5 +1,5 @@
   /************************************************************************
- * @description An extended method for changing a button's background color.
+ * @description An extended method for changing a button's background color. 
  * @file ColorButton.ahk
  * @author Nikola Perovic
  * @link (https://github.com/nperovic/ColorButton.ahk)
