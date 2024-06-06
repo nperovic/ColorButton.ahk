@@ -1,13 +1,13 @@
 # ColorButton.ahk
-An extended method for changing a button's background color.
+An extended method for changing a button's background, text and border color.
 
 [English](#colorbuttonahk) | [中文](#colorbuttonahk-1) | [Srpski](#colorbuttonahk-2)
 
-![20240530-1454-20 5059500](https://github.com/nperovic/ColorButton.ahk/assets/122501303/c951d745-160a-4fe1-912d-42d27d97481a)
+![ColorButton Demo](https://github.com/nperovic/ColorButton.ahk/assets/122501303/9e5c91f9-7982-4b8f-8330-fafa989a0fb8)
 
 
 ## Features
-- Easily change a button's background color.
+- Easily change a button's background, text and border color.
 - Automatically set the text colour to white or black depends on the background colour.
 - Compatible with [AutoHotkey v2.1-alpha.9](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha) or later. **(Update: v2.0 is now supported too.)**
 - Learn more about the ahk v2.1-alpha: [Click here](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha)
@@ -29,39 +29,57 @@ An extended method for changing a button's background color.
 ### Parameters 
 ```scala
 /**
- * @param {integer} btnBgColor Button's background color. (RGB)
- * @param {integer} [colorBehindBtn] The color of the button's surrounding area. If omitted, if will be the same as `myGui.BackColor`. **(Usually let it be transparent looks better.)**
- * @param {integer} [roundedCorner] Specifies the rounded corner preference for the button. If omitted,        : 
- * > For Windows 11: Enabled. (value: 9)  
- * > For Windows 10: Disabled.
- * @param {Integer} [showFocusedBorder=true] Highlight the border of the button when it's focused. 
+ * Configures a button's appearance.
+ * @param {number} bgColor - Button's background color (RGB).
+ * @param {number} [txColor] - Button text color (RGB). If omitted, the text colour will be automatically set to white or black depends on the background colour.
+ * @param {boolean} [showBorder=1]
+ * - `1` : Highlight when focused.
+ * - `0` : No border displayed.
+ * - `-1`: Border always visible.
+ * @param {number} [borderColor=0xFFFFFF] - Button border color (RGB).
+ * @param {number} [roundedCorner] - Rounded corner preference for the button. If omitted,     
+ * - For Windows 11: Enabled (value: 9).
+ * - For Windows 10: Disabled.
  */
-SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?, showFocusedBorder := true)
+SetColor(bgColor, txColor?, showBorder := 1, borderColor := 0xFFFFFF, roundedCorner?)
 ```
-## `BtnObj.SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?, showFocusedBorder := true)`
+## `BtnObj.SetColor(bgColor, txColor?, showBorder := 1, borderColor := 0xFFFFFF, roundedCorner?)`
 ```php
 #Requires AutoHotkey v2
 #Include <ColorButton>
 
-myGui := Gui()
-myGui.SetFont("cWhite s20", "Segoe UI")
-myGui.BackColor := 0x2c2c2c
-
 /** @type {_BtnColor} */
-btn := myGui.AddButton("w300", "Rounded Button")
-btn.SetBackColor(0xaa2031,, 9)
+btn := btn2 := btn3 := btn4 := unset
 
-/** @type {_BtnColor} */
-btn2 := myGui.AddButton("wp", "No Focused Outline")
-btn2.SetBackColor(0xffd155,, 9, false)
+btn := myGui.AddButton("xm w300", "Rounded Button")
+btn.SetColor("0xaa2031", "FFFFCC",, "fff5cc", 9)
+btn.OnEvent("Click", btnClicked)
 
-/** @type {_BtnColor} */
-btn3 := myGui.AddButton("wp", "Rectangle Button")
-btn3.SetBackColor("0x7755ff",, 0)
+btnClicked(btn, *) {
+    static toggle    := 0
+    static textColor := btn.TextColor
+    static backColor := btn.BackColor
+    
+    if (toggle^=1) {
+        btn.TextColor := backColor
+        btn.backColor := textColor
+    } else {
+        btn.TextColor := TextColor
+        btn.backColor := backColor
+    }
+}
 
-/** @type {_BtnColor} */
-btn4 := myGui.AddButton("wp", "No Focused Outline")
-btn4.SetBackColor("0x55ffd4", , 0, 0)
+btn2 := myGui.AddButton("yp wp", "Border Always Visible")
+btn2.SetColor(myGui.BackColor, "fff5cc")
+btn2.BorderColor := btn2.TextColor
+btn2.ShowBorder  := -1
+
+btn3 := myGui.AddButton("xm wp", "Rectangle Button")
+btn3.SetColor("4e479a", "c6c1f7")
+btn3.RoundedCorner := 0
+
+btn4 := myGui.AddButton("yp wp", "No Focused Outline")
+btn4.SetBackColor("008080",, 0, 0,, "AFEEEE")
 
 myGui.Show("w280 AutoSize")
 ```
@@ -72,10 +90,10 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ---
 
 # ColorButton.ahk
-本程式庫為內建類別 `Gui.Button` 擴充了一個更改按鈕背景顏色的方法。
+本程式庫為內建類別 `Gui.Button` 擴充了一個更改按鈕背景背景、文字和邊框顏色的方法。
 
 ## 特點
-- 輕鬆更改按鈕的背景顏色。
+- 輕鬆更改按鈕的背景、文字和邊框顏色。
 - 自動根據背景色彩的深淺設定文字色彩 (深色背景+白色文字或淺色背景+黑色文字)。
 - 支援 AutoHotkey v2.0 或更高版本。
 - 想知道更多關於 [ahk v2.1-alpha](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha) 的資訊，請按[這裡](https://github.com/AutoHotkey/AutoHotkeyDocs/tree/alpha)。
@@ -95,39 +113,57 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ### 參數 
 ```scala
 /**
- * @param {integer} btnBgColor 按鈕的背景顏色。(RGB)
- * @param {integer} [colorBehindBtn] 按鈕周圍區域的顏色。如果省略，將與 `myGui.BackColor` 相同。**(通常設為透明看起來會更好。)**
- * @param {integer} [roundedCorner] 指定按鈕的圓角偏好。如果省略，: 
- * > Windows 11: 啟用。(值：9)  
- * > Windows 10: 禁用。
- * @param {Integer} [showFocusedBorder=true] 當按鈕獲得焦點時突出顯示邊框。
+ * 設定按鈕的外觀。
+ * @param {number} bgColor - 按鈕的背景顏色（RGB）。
+ * @param {number} [txColor] - 按鈕文字顏色（RGB）。如果未指定，文字顏色將根據背景顏色自動設置為白色或黑色。
+ * @param {boolean} [showBorder=1]
+ * - `1` : 聚焦時高亮顯示。
+ * - `0` : 無邊框顯示。
+ * - `-1`: 邊框始終可見。
+ * @param {number} [borderColor=0xFFFFFF] - 按鈕邊框顏色（RGB）。
+ * @param {number} [roundedCorner] - 按鈕的圓角偏好。如果未指定：
+ * - 對於 Windows 11：啟用（值：9）。
+ * - 對於 Windows 10：禁用。
  */
-SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?, showFocusedBorder := true)
+SetColor(bgColor, txColor?, showBorder := 1, borderColor := 0xFFFFFF, roundedCorner?)
 ```
-## `BtnObj.SetBackColor(btnBgColor, colorBehindBtn?, roundedCorner?, showFocusedBorder := true)`
+## `BtnObj.SetColor(bgColor, txColor?, showBorder := 1, borderColor := 0xFFFFFF, roundedCorner?)`
 ```php
 #Requires AutoHotkey v2
 #Include <ColorButton>
 
-myGui := Gui()
-myGui.SetFont("cWhite s20", "Microsoft Yahei UI")
-myGui.BackColor := 0x2c2c2c
-
 /** @type {_BtnColor} */
-btn := myGui.AddButton("w300", "圓角按鈕")
-btn.SetBackColor(0xaa2031,, 9)
+btn := btn2 := btn3 := btn4 := unset
 
-/** @type {_BtnColor} */
-btn2 := myGui.AddButton("wp", "聚焦時不顯示邊框")
-btn2.SetBackColor(0xffd155,, 9, false)
+btn := myGui.AddButton("xm w300", "Rounded Button")
+btn.SetColor("0xaa2031", "FFFFCC",, "fff5cc", 9)
+btn.OnEvent("Click", btnClicked)
 
-/** @type {_BtnColor} */
-btn3 := myGui.AddButton("wp", "正方形按鈕")
-btn3.SetBackColor("0x7755ff",, 0)
+btnClicked(btn, *) {
+    static toggle    := 0
+    static textColor := btn.TextColor
+    static backColor := btn.BackColor
+    
+    if (toggle^=1) {
+        btn.TextColor := backColor
+        btn.backColor := textColor
+    } else {
+        btn.TextColor := TextColor
+        btn.backColor := backColor
+    }
+}
 
-/** @type {_BtnColor} */
-btn4 := myGui.AddButton("wp", "聚焦時不顯示邊框")
-btn4.SetBackColor("0x55ffd4", , 0, 0)
+btn2 := myGui.AddButton("yp wp", "Border Always Visible")
+btn2.SetColor(myGui.BackColor, "fff5cc")
+btn2.BorderColor := btn2.TextColor
+btn2.ShowBorder  := -1
+
+btn3 := myGui.AddButton("xm wp", "Rectangle Button")
+btn3.SetColor("4e479a", "c6c1f7")
+btn3.RoundedCorner := 0
+
+btn4 := myGui.AddButton("yp wp", "No Focused Outline")
+btn4.SetBackColor("008080",, 0, 0,, "AFEEEE")
 
 myGui.Show("w280 AutoSize")
 ```
