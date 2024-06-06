@@ -267,10 +267,17 @@ class _BtnColor extends Gui.Button
     BackColor {
         Get => this.HasProp("_clr") && _BtnColor.RgbToBgr(this._clr)
         Set {
-            if this.HasProp("_first")
-                this._clr := _BtnColor.RgbToBgr(value)
-            else
+            if !this.HasProp("_first")
                 this.SetColor(value)
+            else {
+                b := _BtnColor
+                this.opt("-Redraw")
+                this._clr         := b.RgbToBgr(value)
+                this._isDark      := b.IsColorDark(clr := b.RgbToBgr(this._clr))
+                this._hoverColor  := b.RgbToBgr(b.BrightenColor(clr, this._isDark ? 20 : -20))
+                this._pushedColor := b.RgbToBgr(b.BrightenColor(clr, this._isDark ? -10 : 10))
+                this.opt("+Redraw")
+            }
         }
     }
 
@@ -461,7 +468,7 @@ class _BtnColor extends Gui.Button
             return hbrush 
         }
 
-        BrightenColor(clr, perc := 5) => ((p := perc / 100 + 1), RGB(Round(Min(255, (clr >> 16 & 0xFF) * p)), Round(Min(255, (clr >> 8 & 0xFF) * p)), Round(Min(255, (clr & 0xFF) * p))))
+        BrightenColor(clr, perc := 5) => _BtnColor.BrightenColor(clr, perc)
 
         ColorHex(clr) => Number(((Type(clr) = "string" && SubStr(clr, 1, 2) != "0x") ? "0x" clr : clr))
 
@@ -489,7 +496,7 @@ class _BtnColor extends Gui.Button
 
         OffsetRect(lprc, dx, dy) => DllCall("User32\OffsetRect", "ptr", lprc, "int", dx, "int", dy, "int")
 
-        RGB(R := 255, G := 255, B := 255) => ((R << 16) | (G << 8) | B)
+        RGB(R := 255, G := 255, B := 255) => _BtnColor.RGB(R, G, B)
 
         RoundRect(hdc, nLeftRect, nTopRect, nRightRect, nBottomRect, nWidth, nHeight) => DllCall('Gdi32\RoundRect', 'ptr', hdc, 'int', nLeftRect, 'int', nTopRect, 'int', nRightRect, 'int', nBottomRect, 'int', nWidth, 'int', nHeight, 'int')
 
@@ -512,6 +519,10 @@ class _BtnColor extends Gui.Button
         SetWindowTheme(hwnd, appName, subIdList?) => DllCall("uxtheme\SetWindowTheme", "ptr", hwnd, "ptr", StrPtr(appName), "ptr", subIdList ?? 0)
     }
 
+    static RGB(R := 255, G := 255, B := 255) => ((R << 16) | (G << 8) | B)
+
+    static BrightenColor(clr, perc := 5) => ((p := perc / 100 + 1), _BtnColor.RGB(Round(Min(255, (clr >> 16 & 0xFF) * p)), Round(Min(255, (clr >> 8 & 0xFF) * p)), Round(Min(255, (clr & 0xFF) * p))))
+    
     static IsColorDark(clr) => (((clr >> 16 & 0xFF) / 255 * 0.2126 + (clr >> 8 & 0xFF) / 255 * 0.7152 + (clr & 0xFF) / 255 * 0.0722) < 0.5)
 
     static RgbToBgr(color) => (Type(color) = "string") ? this.RgbToBgr(Number(SubStr(Color, 1, 2) = "0x" ? color : "0x" color)) : (Color >> 16 & 0xFF) | (Color & 0xFF00) | ((Color & 0xFF) << 16)
@@ -530,6 +541,21 @@ btn := btn2 := btn3 := btn4 := unset
 
 btn := myGui.AddButton("xm w300", "Rounded Button")
 btn.SetColor("0xaa2031", "FFFFCC",, "fff5cc", 9)
+btn.OnEvent("Click", btnClicked)
+
+btnClicked(btn, *) {
+    static toggle    := 0
+    static textColor := btn.TextColor
+    static backColor := btn.BackColor
+    
+    if (toggle^=1) {
+        btn.TextColor := backColor
+        btn.backColor := textColor
+    } else {
+        btn.TextColor := TextColor
+        btn.backColor := backColor
+    }
+}
 
 btn2 := myGui.AddButton("yp wp", "Border Always Visible")
 btn2.SetColor(myGui.BackColor, "fff5cc")
