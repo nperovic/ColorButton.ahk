@@ -33,9 +33,11 @@ An extended method for changing a button's background, text and border color.
  * @param {number} bgColor - Button's background color (RGB).
  * @param {number} [txColor] - Button text color (RGB). If omitted, the text colour will be automatically set to white or black depends on the background colour.
  * @param {boolean} [showBorder=1]
+ * - `n` : The higher the value, the thicker the button's border when focused.
  * - `1` : Highlight when focused.
  * - `0` : No border displayed.
  * - `-1`: Border always visible.
+ * - `-n`: The lower the value, the thicker the button's border when always visible.
  * @param {number} [borderColor=0xFFFFFF] - Button border color (RGB).
  * @param {number} [roundedCorner] - Rounded corner preference for the button. If omitted,     
  * - For Windows 11: Enabled (value: 9).
@@ -51,33 +53,37 @@ SetColor(bgColor, txColor?, showBorder := 1, borderColor := 0xFFFFFF, roundedCor
 /** @type {_BtnColor} */
 btn := btn2 := btn3 := btn4 := unset
 
+/* Rounded (Windows 11) or rectangle (Windows 10) button that will get its border on show when it's focused. */
 btn := myGui.AddButton("xm w300", "Rounded Button")
 btn.SetColor("0xaa2031", "FFFFCC",, "fff5cc", 9)
-btn.OnEvent("Click", btnClicked)
 
+/* When you press the button each time, the background and text colours of the button swap around. */
 btnClicked(btn, *) {
     static toggle    := 0
     static textColor := btn.TextColor
     static backColor := btn.BackColor
     
     if (toggle^=1) {
-        btn.TextColor := backColor
+        btn.TextColor := btn.BorderColor := backColor
         btn.backColor := textColor
     } else {
-        btn.TextColor := TextColor
+        btn.TextColor := btn.BorderColor := TextColor
         btn.backColor := backColor
     }
 }
 
+/* Rounded (Windows 11) or rectangle (Windows 10) button that’s got its border on show all the time. */
 btn2 := myGui.AddButton("yp wp", "Border Always Visible")
 btn2.SetColor(myGui.BackColor, "fff5cc")
 btn2.BorderColor := btn2.TextColor
-btn2.ShowBorder  := -1
+btn2.ShowBorder  := -5
 
+/* Rectangle Button and show border outline when the button's focused. */
 btn3 := myGui.AddButton("xm wp", "Rectangle Button")
-btn3.SetColor("4e479a", "c6c1f7")
+btn3.SetColor("4e479a", "c6c1f7", 2)
 btn3.RoundedCorner := 0
 
+/* Rectangle Button with no border outline. */
 btn4 := myGui.AddButton("yp wp", "No Focused Outline")
 btn4.SetBackColor("008080",, 0, 0,, "AFEEEE")
 
