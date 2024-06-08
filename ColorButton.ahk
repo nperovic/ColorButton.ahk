@@ -3,11 +3,11 @@
  * @file ColorButton.ahk
  * @author Nikola Perovic
  * @link (https://github.com/nperovic/ColorButton.ahk)
- * @date 2024/06/06
- * @version 1.3.0
+ * @date 2024/06/08
+ * @version 1.3.1
  ***********************************************************************/
 
-#Requires AutoHotkey v2.0.15
+#Requires AutoHotkey v2.0.16
 #SingleInstance
 
 ; ================================================================================ 
@@ -257,13 +257,13 @@ class _BtnColor extends Gui.Button
         return dwTextFlags | DT_WORDBREAK
     }
 
-    /** Set/ Get the Button Text Color (RGB). (To set the text colour, you must have used `SetColor()`, `SetBackColor()`, or `BackColor` to set the background colour at least once beforehand.) */
+    /** @prop {Integer} TextColor Set/ Get the Button Text Color (RGB). (To set the text colour, you must have used `SetColor()`, `SetBackColor()`, or `BackColor` to set the background colour at least once beforehand.) */
     TextColor {
         Get => this.HasProp("_textColor") && _BtnColor.RgbToBgr(this._textColor)
         Set => this._textColor := _BtnColor.RgbToBgr(value)
     }
 
-    /** Set/ Get the Button background Color (RGB). */
+    /** @prop {Integer} BackColor Set/ Get the Button background Color (RGB). */
     BackColor {
         Get => this.HasProp("_clr") && _BtnColor.RgbToBgr(this._clr)
         Set {
@@ -281,30 +281,33 @@ class _BtnColor extends Gui.Button
         }
     }
 
-    /** Button border color (RGB). (To set the border colour, you must have used `SetColor()`, `SetBackColor()`, or `BackColor` to set the background colour at least once beforehand.)*/
+    /** @prop {Integer} BorderColor Button border color (RGB). (To set the border colour, you must have used `SetColor()`, `SetBackColor()`, or `BackColor` to set the background colour at least once beforehand.)*/
     BorderColor {
         Get => this.HasProp("_borderColor") && _BtnColor.RgbToBgr(this._borderColor)
         Set => this._borderColor := _BtnColor.RgbToBgr(value)
     }
     
-    /** Rounded corner preference for the button.  (To set the rounded corner preference, you must have used `SetColor()`, `SetBackColor()`, or `BackColor` to set the background colour at least once beforehand.) */
+    /** @prop {Integer} RoundedCorner Rounded corner preference for the button.  (To set the rounded corner preference, you must have used `SetColor()`, `SetBackColor()`, or `BackColor` to set the background colour at least once beforehand.) */
     RoundedCorner {
-        Get => this.HasProp("_roundedCorner") && _BtnColor.RgbToBgr(this._roundedCorner)
+        Get => this.HasProp("_roundedCorner") && this._roundedCorner
         Set => this._roundedCorner := value
     }
 
     /**
+     * @prop {Integer} ShowBorder
      * Border preference. (To set the border preference, you must have used `SetColor()`, `SetBackColor()`, or `BackColor` to set the background colour at least once beforehand.)
+     * - `n` : The higher the value, the thicker the button's border when focused.
      * - `1` : Highlight when focused.
      * - `0` : No border displayed.
      * - `-1`: Border always visible.
+     * - `-n`: The lower the value, the thicker the button's border when always visible.
      */
     ShowBorder {
-        Get => this.HasProp("_showBorder") && _BtnColor.RgbToBgr(this._showBorder)
+        Get => this.HasProp("_showBorder") && this._showBorder
         Set {
-            if ((value >= -1) && (value <= 1))
+            if IsNumber(Value)
                 this._showBorder := value
-            else throw ValueError("The value must be -1, 0 or 1.", "ShowBorder")
+            else throw TypeError("The value must be a number.", "ShowBorder")
         }
     }
 
@@ -316,9 +319,11 @@ class _BtnColor extends Gui.Button
      * - For Windows 11: Enabled (value: 9).
      * - For Windows 10: Disabled.
      * @param {boolean} [showBorder=1]
-     * - `1` : Highlight when focused.
-     * - `0` : No border displayed.
+     * - `n` : The higher the value, the thicker the button's border when focused.
+     * - `1`: Highlight when focused.
+     * - `0`: No border displayed.
      * - `-1`: Border always visible.
+     * - `-n`: The lower the value, the thicker the button's border when always visible.
      * @param {number} [borderColor=0xFFFFFF] - Button border color (RGB).
      * @param {number} [txColor] - Button text color (RGB). If omitted, the text colour will be automatically set to white or black depends on the background colour.
      */
@@ -329,9 +334,11 @@ class _BtnColor extends Gui.Button
      * @param {number} bgColor - Button's background color (RGB).
      * @param {number} [txColor] - Button text color (RGB). If omitted, the text colour will be automatically set to white or black depends on the background colour.
      * @param {boolean} [showBorder=1]
+     * - `n` : The higher the value, the thicker the button's border when focused.
      * - `1` : Highlight when focused.
      * - `0` : No border displayed.
      * - `-1`: Border always visible.
+     * - `-n`: The lower the value, the thicker the button's border when always visible.
      * @param {number} [borderColor=0xFFFFFF] - Button border color (RGB).
      * @param {number} [roundedCorner] - Rounded corner preference for the button. If omitted,     
      * - For Windows 11: Enabled (value: 9).
@@ -349,7 +356,7 @@ class _BtnColor extends Gui.Button
         static BTN_STYLE       := (WS_CLIPSIBLINGS | BS_FLAT | BS_BITMAP) 
 
         this._first         := 1
-        this._roundedCorner := roundedCorner ?? unset
+        this._roundedCorner := roundedCorner ?? (IS_WIN11 ? 9 : 0)
         this._showBorder    := showBorder
         this._clr           := ColorHex(bgColor)
         this._isDark        := _BtnColor.IsColorDark(this._clr)
@@ -387,6 +394,7 @@ class _BtnColor extends Gui.Button
             static DC_PEN           := GetStockObject(19)
             static DT_CALCRECT      := 0x400
             static DT_WORDBREAK     := 0x10
+            static PS_SOLID         := 0
             
             nmcd := NMCUSTOMDRAWINFO(lParam)
 
@@ -396,30 +404,32 @@ class _BtnColor extends Gui.Button
                 return CDRF_DODEFAULT
             
             ; Determine the background colour based on the button's status.
-            isPressed  := GetKeyState("LButton", "P")
-            isHot      := (nmcd.uItemState & CDIS_HOT)
+            isPressed := GetKeyState("LButton", "P")
+            isHot     := (nmcd.uItemState & CDIS_HOT)
             brushColor := penColor := (!isHot || this._first ? this._clr : isPressed ? this._pushedColor : this._hoverColor)
-
-            SelectObject(nmcd.hdc, DC_PEN)
-            SelectObject(nmcd.hdc, DC_BRUSH)
             
             ; Set Rounded Corner Preference ----------------------------------------------
 
             rc     := nmcd.rc
-            corner := (this._roundedCorner ?? (IS_WIN11 ? 9 : 0))
+            corner := this._roundedCorner
             SetWindowRgn(gCtrl.hwnd, CreateRoundRectRgn(rc.left, rc.top, rc.right, rc.bottom, corner, corner), 1)
             GetWindowRgn(gCtrl.hwnd, rcRgn := CreateRectRgn())
             
             ; Draw Border ----------------------------------------------------------------
 
-            if ((this._showBorder = -1) || (this._showBorder && !this._first && gCtrl.Focused && !isPressed)) {
-                SetDCPenColor(nmcd.hdc, this._borderColor)
-                FrameRect(nmcd.hdc, rc, DC_PEN)
-            } else
+            if ((this._showBorder < 0) || (this._showBorder > 0 && gCtrl.Focused)) {
+                penColor := this._showBorder > 0 && !gCtrl.Focused ? penColor : this._borderColor
+                hpen     := CreatePen(PS_SOLID, this._showBorder, penColor)
+                SelectObject(nmcd.hdc, hpen)
+                FrameRect(nmcd.hdc, rc, DC_PEN)                
+            } else {
+                SelectObject(nmcd.hdc, DC_PEN)
                 SetDCPenColor(nmcd.hdc, penColor)
+            }
 
             ; Draw Background ------------------------------------------------------------
 
+            SelectObject(nmcd.hdc, DC_BRUSH)
             SetDCBrushColor(nmcd.hdc, brushColor)
             RoundRect(nmcd.hdc, rc.left, rc.top, rc.right-1, rc.bottom-1, corner, corner)
 
@@ -429,7 +439,8 @@ class _BtnColor extends Gui.Button
             dwTextFlags := this.GetTextFlags(&hCenter, &vCenter, &right, &bottom)
             SetBkMode(nmcd.hdc, 0)
             SetTextColor(nmcd.hdc, this._textColor)
-            CopyRect(rcT := RECT(), nmcd.rc)
+
+            CopyRect(rcT := !NMCUSTOMDRAWINFO.HasProp("RECT") && IsSet(RECT) ? RECT() : NMCUSTOMDRAWINFO.RECT(), nmcd.rc)
             
             ; Calculate the text rect.
             DrawText(nmcd.hdc, textPtr, -1, rcT, DT_CALCRECT | dwTextFlags)
@@ -447,6 +458,10 @@ class _BtnColor extends Gui.Button
                 this._first := 0
 
             DeleteObject(rcRgn)
+            
+            if (pen??0)
+                DeleteObject(hpen)
+
             SetWindowPos(this.hwnd, 0, 0, 0, 0, 0, 0x4043)
 
             return CDRF_SKIPDEFAULT 
@@ -477,6 +492,8 @@ class _BtnColor extends Gui.Button
         CreateRectRgn(nLeftRect := 0, nTopRect := 0, nRightRect := 0, nBottomRect := 0) => DllCall('Gdi32\CreateRectRgn', 'int', nLeftRect, 'int', nTopRect, 'int', nRightRect, 'int', nBottomRect, 'ptr')
 
         CreateRoundRectRgn(nLeftRect, nTopRect, nRightRect, nBottomRect, nWidthEllipse, nHeightEllipse) => DllCall('Gdi32\CreateRoundRectRgn', 'int', nLeftRect, 'int', nTopRect, 'int', nRightRect, 'int', nBottomRect, 'int', nWidthEllipse, 'int', nHeightEllipse, 'ptr')
+
+        CreatePen(fnPenStyle, nWidth, crColor) => DllCall('Gdi32\CreatePen', 'int', fnPenStyle, 'int', nWidth, 'uint', crColor, 'ptr')
 
         CreateSolidBrush(crColor) => DllCall('Gdi32\CreateSolidBrush', 'uint', crColor, 'ptr')
 
@@ -539,33 +556,38 @@ myGui.BackColor := 0x202020
 /** @type {_BtnColor} */
 btn := btn2 := btn3 := btn4 := unset
 
+; Rounded (Windows 11) or rectangle (Windows 10) button that will get its border on show when it's focused.
 btn := myGui.AddButton("xm w300", "Rounded Button")
 btn.SetColor("0xaa2031", "FFFFCC",, "fff5cc", 9)
-btn.OnEvent("Click", btnClicked)
 
+; When you press the button each time, the background and text colours of the button swap around.
+btn.OnEvent("Click", btnClicked)
 btnClicked(btn, *) {
     static toggle    := 0
     static textColor := btn.TextColor
     static backColor := btn.BackColor
     
     if (toggle^=1) {
-        btn.TextColor := backColor
+        btn.TextColor := btn.BorderColor := backColor
         btn.backColor := textColor
     } else {
-        btn.TextColor := TextColor
+        btn.TextColor := btn.BorderColor := TextColor
         btn.backColor := backColor
     }
 }
 
+; Rounded (Windows 11) or rectangle (Windows 10) button that’s got its border on show all the time.
 btn2 := myGui.AddButton("yp wp", "Border Always Visible")
 btn2.SetColor(myGui.BackColor, "fff5cc")
 btn2.BorderColor := btn2.TextColor
-btn2.ShowBorder  := -1
+btn2.ShowBorder  := -5
 
+; Rectangle Button and show border outline when the button's focused.
 btn3 := myGui.AddButton("xm wp", "Rectangle Button")
-btn3.SetColor("4e479a", "c6c1f7")
+btn3.SetColor("4e479a", "c6c1f7", 2)
 btn3.RoundedCorner := 0
 
+; Rectangle Button with no border outline.
 btn4 := myGui.AddButton("yp wp", "No Focused Outline")
 btn4.SetBackColor("008080",, 0, 0,, "AFEEEE")
 
