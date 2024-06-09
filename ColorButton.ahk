@@ -7,7 +7,7 @@
  * @version 1.3.1
  ***********************************************************************/
 
-#Requires AutoHotkey v2.0.16
+#Requires AutoHotkey v2.0
 #SingleInstance
 
 ; ================================================================================ 
@@ -545,50 +545,52 @@ class _BtnColor extends Gui.Button
     static RgbToBgr(color) => (Type(color) = "string") ? this.RgbToBgr(Number(SubStr(Color, 1, 2) = "0x" ? color : "0x" color)) : (Color >> 16 & 0xFF) | (Color & 0xFF00) | ((Color & 0xFF) << 16)
 }
 
-
-; Example - ColorButton
-myGui := Gui("Resize")
-myGui.SetFont("cWhite s20", "Segoe UI")
-
-DllCall("Dwmapi\DwmSetWindowAttribute", "Ptr", myGui.hwnd, "UInt", 20, "Ptr*", 1, "UInt", 4)
-myGui.BackColor := 0x202020
-
-/** @type {_BtnColor} */
-btn := btn2 := btn3 := btn4 := unset
-
-; Rounded (Windows 11) or rectangle (Windows 10) button that will get its border on show when it's focused.
-btn := myGui.AddButton("xm w300", "Rounded Button")
-btn.SetColor("0xaa2031", "FFFFCC",, "fff5cc", 9)
-
-; When you press the button each time, the background and text colours of the button swap around.
-btn.OnEvent("Click", btnClicked)
-btnClicked(btn, *) {
-    static toggle    := 0
-    static textColor := btn.TextColor
-    static backColor := btn.BackColor
-    
-    if (toggle^=1) {
-        btn.TextColor := btn.BorderColor := backColor
-        btn.backColor := textColor
-    } else {
-        btn.TextColor := btn.BorderColor := TextColor
-        btn.backColor := backColor
-    }
+if (A_LineFile = A_ScriptFullPath) && !A_IsCompiled
+{
+  ; Example - ColorButton
+  myGui := Gui("Resize")
+  myGui.SetFont("cWhite s20", "Segoe UI")
+  
+  DllCall("Dwmapi\DwmSetWindowAttribute", "Ptr", myGui.hwnd, "UInt", 20, "Ptr*", 1, "UInt", 4)
+  myGui.BackColor := 0x202020
+  
+  /** @type {_BtnColor} */
+  btn := btn2 := btn3 := btn4 := unset
+  
+  ; Rounded (Windows 11) or rectangle (Windows 10) button that will get its border on show when it's focused.
+  btn := myGui.AddButton("xm w300", "Rounded Button")
+  btn.SetColor("0xaa2031", "FFFFCC",, "fff5cc", 9)
+  
+  ; When you press the button each time, the background and text colours of the button swap around.
+  btn.OnEvent("Click", btnClicked)
+  btnClicked(btn, *) {
+      static toggle    := 0
+      static textColor := btn.TextColor
+      static backColor := btn.BackColor
+      
+      if (toggle^=1) {
+          btn.TextColor := btn.BorderColor := backColor
+          btn.backColor := textColor
+      } else {
+          btn.TextColor := btn.BorderColor := TextColor
+          btn.backColor := backColor
+      }
+  }
+  
+  ; Rounded (Windows 11) or rectangle (Windows 10) button that’s got its border on show all the time.
+  btn2 := myGui.AddButton("yp wp", "Border Always Visible")
+  btn2.SetColor(myGui.BackColor, "fff5cc")
+  btn2.BorderColor := btn2.TextColor
+  btn2.ShowBorder  := -5
+  
+  ; Rectangle Button and show border outline when the button's focused.
+  btn3 := myGui.AddButton("xm wp", "Rectangle Button")
+  btn3.SetColor("4e479a", "c6c1f7", 2)
+  btn3.RoundedCorner := 0
+  
+  ; Rectangle Button with no border outline.
+  btn4 := myGui.AddButton("yp wp", "No Focused Outline")
+  btn4.SetBackColor("008080",, 0, 0,, "AFEEEE")
+  
+  myGui.Show("w280 AutoSize")
 }
-
-; Rounded (Windows 11) or rectangle (Windows 10) button that’s got its border on show all the time.
-btn2 := myGui.AddButton("yp wp", "Border Always Visible")
-btn2.SetColor(myGui.BackColor, "fff5cc")
-btn2.BorderColor := btn2.TextColor
-btn2.ShowBorder  := -5
-
-; Rectangle Button and show border outline when the button's focused.
-btn3 := myGui.AddButton("xm wp", "Rectangle Button")
-btn3.SetColor("4e479a", "c6c1f7", 2)
-btn3.RoundedCorner := 0
-
-; Rectangle Button with no border outline.
-btn4 := myGui.AddButton("yp wp", "No Focused Outline")
-btn4.SetBackColor("008080",, 0, 0,, "AFEEEE")
-
-myGui.Show("w280 AutoSize")
